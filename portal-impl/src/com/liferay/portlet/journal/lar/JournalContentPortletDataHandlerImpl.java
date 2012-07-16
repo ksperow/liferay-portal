@@ -80,7 +80,7 @@ public class JournalContentPortletDataHandlerImpl
 	@Override
 	public PortletDataHandlerControl[] getExportMetadataControls() {
 		return new PortletDataHandlerControl[] {
-			 new PortletDataHandlerBoolean(
+			new PortletDataHandlerBoolean(
 				_NAMESPACE, "web-content", true,
 				JournalPortletDataHandlerImpl.getMetadataControls()),
 			new PortletDataHandlerBoolean(
@@ -100,7 +100,7 @@ public class JournalContentPortletDataHandlerImpl
 	@Override
 	public PortletDataHandlerControl[] getImportMetadataControls() {
 		return new PortletDataHandlerControl[] {
-			 new PortletDataHandlerBoolean(
+			new PortletDataHandlerBoolean(
 				_NAMESPACE, "web-content", true,
 				JournalPortletDataHandlerImpl.getMetadataControls()),
 			new PortletDataHandlerBoolean(
@@ -118,6 +118,11 @@ public class JournalContentPortletDataHandlerImpl
 	@Override
 	public boolean isAlwaysStaged() {
 		return _ALWAYS_STAGED;
+	}
+
+	@Override
+	public boolean isDataLocalized() {
+		return _DATA_LOCALIZED;
 	}
 
 	@Override
@@ -345,6 +350,8 @@ public class JournalContentPortletDataHandlerImpl
 	private static final boolean _ALWAYS_EXPORTABLE = true;
 
 	private static final boolean _ALWAYS_STAGED = true;
+
+	private static final boolean _DATA_LOCALIZED = true;
 
 	private static final String _NAMESPACE = "journal";
 

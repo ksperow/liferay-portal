@@ -776,7 +776,7 @@ public class UserLocalServiceImpl extends UserLocalServiceBaseImpl {
 
 		Date birthday = PortalUtil.getDate(
 			birthdayMonth, birthdayDay, birthdayYear,
-			new ContactBirthdayException());
+			ContactBirthdayException.class);
 
 		Contact contact = contactPersistence.create(user.getContactId());
 
@@ -1833,6 +1833,21 @@ public class UserLocalServiceImpl extends UserLocalServiceBaseImpl {
 		catch (EncryptorException ee) {
 			throw new SystemException(ee);
 		}
+	}
+
+	/**
+	 * Returns the user with the email address.
+	 *
+	 * @param  companyId the primary key of the user's company
+	 * @param  emailAddress the user's email address
+	 * @return the user with the email address, or <code>null</code> if a user
+	 *         with the email address could not be found
+	 * @throws SystemException if a system exception occurred
+	 */
+	public User fetchUserByEmailAddress(long companyId, String emailAddress)
+		throws SystemException {
+
+		return userPersistence.fetchByC_EA(companyId, emailAddress);
 	}
 
 	/**
@@ -3935,7 +3950,7 @@ public class UserLocalServiceImpl extends UserLocalServiceBaseImpl {
 
 			Date birthday = PortalUtil.getDate(
 				birthdayMonth, birthdayDay, birthdayYear,
-				new ContactBirthdayException());
+				ContactBirthdayException.class);
 
 			Contact contact = user.getContact();
 
@@ -4693,7 +4708,7 @@ public class UserLocalServiceImpl extends UserLocalServiceBaseImpl {
 
 		Date birthday = PortalUtil.getDate(
 			birthdayMonth, birthdayDay, birthdayYear,
-			new ContactBirthdayException());
+			ContactBirthdayException.class);
 
 		long contactId = user.getContactId();
 

@@ -16,17 +16,19 @@ package com.liferay.portlet.blogs.service.impl;
 
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.exception.SystemException;
+import com.liferay.portal.kernel.json.JSONFactoryUtil;
+import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.search.Indexer;
 import com.liferay.portal.kernel.search.IndexerRegistryUtil;
+import com.liferay.portal.kernel.util.Constants;
 import com.liferay.portal.kernel.util.ContentTypes;
 import com.liferay.portal.kernel.util.FileUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HtmlUtil;
 import com.liferay.portal.kernel.util.HttpUtil;
 import com.liferay.portal.kernel.util.OrderByComparator;
-import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.PropsKeys;
 import com.liferay.portal.kernel.util.SetUtil;
 import com.liferay.portal.kernel.util.StringBundler;
@@ -105,7 +107,7 @@ public class BlogsEntryLocalServiceImpl extends BlogsEntryLocalServiceBaseImpl {
 		Date displayDate = PortalUtil.getDate(
 			displayDateMonth, displayDateDay, displayDateYear, displayDateHour,
 			displayDateMinute, user.getTimeZone(),
-			new EntryDisplayDateException());
+			EntryDisplayDateException.class);
 
 		byte[] smallImageBytes = null;
 
@@ -241,6 +243,41 @@ public class BlogsEntryLocalServiceImpl extends BlogsEntryLocalServiceBaseImpl {
 		BlogsEntry entry = blogsEntryPersistence.findByPrimaryKey(entryId);
 
 		addEntryResources(entry, groupPermissions, guestPermissions);
+	}
+
+	public void checkEntries() throws PortalException, SystemException {
+		Date now = new Date();
+
+		int count = blogsEntryPersistence.countByLtD_S(
+			now, WorkflowConstants.STATUS_SCHEDULED);
+
+		if (count == 0) {
+			return;
+		}
+
+		List<BlogsEntry> entries = blogsEntryPersistence.findByLtD_S(
+			now, WorkflowConstants.STATUS_SCHEDULED);
+
+		for (BlogsEntry entry : entries) {
+			ServiceContext serviceContext = new ServiceContext();
+
+			String[] trackbacks = StringUtil.split(entry.getTrackbacks());
+
+			serviceContext.setAttribute("trackbacks", trackbacks);
+
+			serviceContext.setCommand(Constants.UPDATE);
+
+			String layoutFullURL = PortalUtil.getLayoutFullURL(
+				entry.getGroupId(), PortletKeys.BLOGS);
+
+			serviceContext.setLayoutFullURL(layoutFullURL);
+
+			serviceContext.setScopeGroupId(entry.getGroupId());
+
+			updateStatus(
+				entry.getStatusByUserId(), entry.getEntryId(),
+				WorkflowConstants.STATUS_APPROVED, serviceContext);
+		}
 	}
 
 	public void deleteEntries(long groupId)
@@ -604,7 +641,7 @@ public class BlogsEntryLocalServiceImpl extends BlogsEntryLocalServiceBaseImpl {
 		Date displayDate = PortalUtil.getDate(
 			displayDateMonth, displayDateDay, displayDateYear, displayDateHour,
 			displayDateMinute, user.getTimeZone(),
-			new EntryDisplayDateException());
+			EntryDisplayDateException.class);
 
 		byte[] smallImageBytes = null;
 
@@ -686,10 +723,6 @@ public class BlogsEntryLocalServiceImpl extends BlogsEntryLocalServiceBaseImpl {
 		serviceContext.setAttribute(
 			"pingOldTrackbacks", String.valueOf(pingOldTrackbacks));
 
-		if (entry.getStatus() != WorkflowConstants.STATUS_DRAFT) {
-			serviceContext.setAttribute("update", Boolean.TRUE.toString());
-		}
-
 		if (Validator.isNotNull(trackbacks)) {
 			serviceContext.setAttribute("trackbacks", trackbacks);
 		}
@@ -730,6 +763,16 @@ public class BlogsEntryLocalServiceImpl extends BlogsEntryLocalServiceBaseImpl {
 
 		int oldStatus = entry.getStatus();
 
+		if (oldStatus == WorkflowConstants.STATUS_DRAFT) {
+			serviceContext.setCommand(Constants.ADD);
+		}
+
+		if ((status == WorkflowConstants.STATUS_APPROVED) &&
+			now.before(entry.getDisplayDate())) {
+
+			status = WorkflowConstants.STATUS_SCHEDULED;
+		}
+
 		entry.setModifiedDate(serviceContext.getModifiedDate(now));
 		entry.setStatus(status);
 		entry.setStatusByUserId(user.getUserId());
@@ -738,38 +781,41 @@ public class BlogsEntryLocalServiceImpl extends BlogsEntryLocalServiceBaseImpl {
 
 		blogsEntryPersistence.update(entry, false);
 
+		// Statistics
+
+		blogsStatsUserLocalService.updateStatsUser(
+			entry.getGroupId(), user.getUserId(), entry.getDisplayDate());
+
 		Indexer indexer = IndexerRegistryUtil.nullSafeGetIndexer(
 			BlogsEntry.class);
 
+		JSONObject extraDataJSONObject = JSONFactoryUtil.createJSONObject();
+
+		extraDataJSONObject.put("title", entry.getTitle());
+
 		if (status == WorkflowConstants.STATUS_APPROVED) {
 
-			// Statistics
+			// Asset
 
-			blogsStatsUserLocalService.updateStatsUser(
-				entry.getGroupId(), user.getUserId(), entry.getDisplayDate());
+			assetEntryLocalService.updateVisible(
+				BlogsEntry.class.getName(), entryId, true);
 
-			if (oldStatus != WorkflowConstants.STATUS_APPROVED) {
+			// Social
 
-				// Asset
-
-				assetEntryLocalService.updateVisible(
-					BlogsEntry.class.getName(), entryId, true);
-
-				// Social
-
-				boolean update = ParamUtil.getBoolean(serviceContext, "update");
-
-				if (update) {
+			if (oldStatus != WorkflowConstants.STATUS_SCHEDULED) {
+				if (serviceContext.isCommandUpdate()) {
 					socialActivityLocalService.addActivity(
 						user.getUserId(), entry.getGroupId(),
 						BlogsEntry.class.getName(), entryId,
-						BlogsActivityKeys.UPDATE_ENTRY, StringPool.BLANK, 0);
+						BlogsActivityKeys.UPDATE_ENTRY,
+						extraDataJSONObject.toString(), 0);
 				}
 				else {
 					socialActivityLocalService.addUniqueActivity(
 						user.getUserId(), entry.getGroupId(),
 						BlogsEntry.class.getName(), entryId,
-						BlogsActivityKeys.ADD_ENTRY, StringPool.BLANK, 0);
+						BlogsActivityKeys.ADD_ENTRY,
+						extraDataJSONObject.toString(), 0);
 				}
 			}
 
@@ -793,12 +839,31 @@ public class BlogsEntryLocalServiceImpl extends BlogsEntryLocalServiceBaseImpl {
 			pingTrackbacks(
 				entry, trackbacks, pingOldTrackbacks, serviceContext);
 		}
-		else if (status != WorkflowConstants.STATUS_APPROVED) {
+		else {
 
 			// Asset
 
 			assetEntryLocalService.updateVisible(
 				BlogsEntry.class.getName(), entryId, false);
+
+			// Social
+
+			if (status == WorkflowConstants.STATUS_SCHEDULED) {
+				if (serviceContext.isCommandUpdate()) {
+					socialActivityLocalService.addActivity(
+						user.getUserId(), entry.getGroupId(),
+						BlogsEntry.class.getName(), entryId,
+						BlogsActivityKeys.UPDATE_ENTRY,
+						extraDataJSONObject.toString(), 0);
+				}
+				else {
+					socialActivityLocalService.addUniqueActivity(
+						user.getUserId(), entry.getGroupId(),
+						BlogsEntry.class.getName(), entryId,
+						BlogsActivityKeys.ADD_ENTRY,
+						extraDataJSONObject.toString(), 0);
+				}
+			}
 
 			// Indexer
 

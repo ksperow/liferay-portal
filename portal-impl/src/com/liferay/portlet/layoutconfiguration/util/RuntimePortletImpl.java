@@ -47,6 +47,9 @@ import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.portlet.layoutconfiguration.util.velocity.CustomizationSettingsProcessor;
 import com.liferay.portlet.layoutconfiguration.util.velocity.TemplateProcessor;
+import com.liferay.portlet.layoutconfiguration.util.xml.ActionURLLogic;
+import com.liferay.portlet.layoutconfiguration.util.xml.PortletLogic;
+import com.liferay.portlet.layoutconfiguration.util.xml.RenderURLLogic;
 import com.liferay.portlet.layoutconfiguration.util.xml.RuntimeLogic;
 import com.liferay.taglib.util.VelocityTaglib;
 
@@ -305,6 +308,26 @@ public class RuntimePortletImpl implements RuntimePortlet {
 		}
 	}
 
+	public String processXML(
+			ServletContext servletContext, HttpServletRequest request,
+			HttpServletResponse response, RenderRequest renderRequest,
+			RenderResponse renderResponse, String content)
+		throws Exception {
+
+		RuntimeLogic portletLogic = new PortletLogic
+			(servletContext, request, response, renderRequest, renderResponse);
+		RuntimeLogic actionURLLogic = new ActionURLLogic(renderResponse);
+		RuntimeLogic renderURLLogic = new RenderURLLogic(renderResponse);
+
+		content = RuntimePortletUtil.processXML(request, content, portletLogic);
+		content = RuntimePortletUtil.processXML(
+			request, content, actionURLLogic);
+		content = RuntimePortletUtil.processXML(
+			request, content, renderURLLogic);
+
+		return content;
+	}
+
 	protected Object buildVelocityTaglib(
 			HttpServletRequest request, HttpServletResponse response,
 			PageContext pageContext)
@@ -330,11 +353,11 @@ public class RuntimePortletImpl implements RuntimePortlet {
 			String velocityTemplateContent, boolean processTemplate)
 		throws Exception {
 
-		 if (Validator.isNull(velocityTemplateContent)) {
-			 return null;
-		 }
+		if (Validator.isNull(velocityTemplateContent)) {
+			return null;
+		}
 
-		LayoutTemplate layoutTemplate = getLayoutTemlpate(velocityTemplateId);
+		LayoutTemplate layoutTemplate = getLayoutTemplate(velocityTemplateId);
 
 		String pluginServletContextName = GetterUtil.getString(
 			layoutTemplate.getServletContextName());
@@ -520,7 +543,7 @@ public class RuntimePortletImpl implements RuntimePortlet {
 		sb.writeTo(jspWriter);
 	}
 
-	protected LayoutTemplate getLayoutTemlpate(String velocityTemplateId) {
+	protected LayoutTemplate getLayoutTemplate(String velocityTemplateId) {
 		String separator = LayoutTemplateConstants.CUSTOM_SEPARATOR;
 		boolean standard = false;
 

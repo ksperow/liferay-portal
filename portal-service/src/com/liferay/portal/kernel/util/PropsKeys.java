@@ -1087,6 +1087,8 @@ public interface PropsKeys {
 
 	public static final String LAYOUT_PARENTABLE = "layout.parentable";
 
+	public static final String LAYOUT_PROTOTYPE_LINK_ENABLED_DEFAULT = "layout.prototype.link.enabled.default";
+
 	public static final String LAYOUT_PROTOTYPE_MERGE_FAIL_THRESHOLD = "layout.prototype.merge.fail.threshold";
 
 	public static final String LAYOUT_PROTOTYPE_MERGE_LOCK_MAX_TIME = "layout.prototype.merge.lock.max.time";
@@ -1707,6 +1709,10 @@ public interface PropsKeys {
 
 	public static final String RATINGS_DEFAULT_NUMBER_OF_STARS = "ratings.default.number.of.stars";
 
+	public static final String RATINGS_MAX_SCORE = "ratings.max.score";
+
+	public static final String RATINGS_MIN_SCORE = "ratings.min.score";
+
 	public static final String REDIRECT_URL_DOMAINS_ALLOWED = "redirect.url.domains.allowed";
 
 	public static final String REDIRECT_URL_IPS_ALLOWED = "redirect.url.ips.allowed";
@@ -2207,8 +2213,6 @@ public interface PropsKeys {
 
 	public static final String WEB_SERVER_SERVLET_DIRECTORY_INDEXING_ENABLED = "web.server.servlet.directory.indexing.enabled";
 
-	public static final String WEB_SERVER_SERVLET_HTTP_STATUS_CODE_STRICT = "web.server.servlet.http.status.code.strict";
-
 	public static final String WEB_SERVER_SERVLET_MAX_RANGE_FIELDS = "web.server.servlet.max.range.fields";
 
 	public static final String WEB_SERVER_SERVLET_VERSION_VERBOSITY = "web.server.servlet.version.verbosity";
@@ -2266,6 +2270,10 @@ public interface PropsKeys {
 	public static final String WIKI_INITIAL_NODE_NAME = "wiki.initial.node.name";
 
 	public static final String WIKI_PAGE_COMMENTS_ENABLED = "wiki.page.comments.enabled";
+
+	public static final String WIKI_PAGE_MINOR_EDIT_ADD_SOCIAL_ACTIVITY = "wiki.page.minor.edit.add.social.activity";
+
+	public static final String WIKI_PAGE_MINOR_EDIT_SEND_EMAIL = "wiki.page.minor.edit.send.email";
 
 	public static final String WIKI_PAGE_RATINGS_ENABLED = "wiki.page.ratings.enabled";
 

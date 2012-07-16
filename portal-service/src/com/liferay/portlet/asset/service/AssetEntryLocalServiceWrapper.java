@@ -315,13 +315,6 @@ public class AssetEntryLocalServiceWrapper implements AssetEntryLocalService,
 		return _assetEntryLocalService.getCompanyEntriesCount(companyId);
 	}
 
-	public com.liferay.portlet.asset.model.AssetEntryDisplay[] getCompanyEntryDisplays(
-		long companyId, int start, int end, java.lang.String languageId)
-		throws com.liferay.portal.kernel.exception.SystemException {
-		return _assetEntryLocalService.getCompanyEntryDisplays(companyId,
-			start, end, languageId);
-	}
-
 	public java.util.List<com.liferay.portlet.asset.model.AssetEntry> getEntries(
 		com.liferay.portlet.asset.service.persistence.AssetEntryQuery entryQuery)
 		throws com.liferay.portal.kernel.exception.SystemException {
@@ -428,22 +421,6 @@ public class AssetEntryLocalServiceWrapper implements AssetEntryLocalService,
 			keywords, start, end);
 	}
 
-	public com.liferay.portlet.asset.model.AssetEntryDisplay[] searchEntryDisplays(
-		long companyId, long[] groupIds, java.lang.String className,
-		java.lang.String keywords, java.lang.String languageId, int start,
-		int end) throws com.liferay.portal.kernel.exception.SystemException {
-		return _assetEntryLocalService.searchEntryDisplays(companyId, groupIds,
-			className, keywords, languageId, start, end);
-	}
-
-	public int searchEntryDisplaysCount(long companyId, long[] groupIds,
-		java.lang.String className, java.lang.String keywords,
-		java.lang.String languageId)
-		throws com.liferay.portal.kernel.exception.SystemException {
-		return _assetEntryLocalService.searchEntryDisplaysCount(companyId,
-			groupIds, className, keywords, languageId);
-	}
-
 	public com.liferay.portlet.asset.model.AssetEntry updateEntry(long userId,
 		long groupId, java.lang.String className, long classPK,
 		long[] categoryIds, java.lang.String[] tagNames)
@@ -469,6 +446,15 @@ public class AssetEntryLocalServiceWrapper implements AssetEntryLocalService,
 			classPK, classUuid, classTypeId, categoryIds, tagNames, visible,
 			startDate, endDate, publishDate, expirationDate, mimeType, title,
 			description, summary, url, layoutUuid, height, width, priority, sync);
+	}
+
+	public com.liferay.portlet.asset.model.AssetEntry updateEntry(
+		java.lang.String className, long classPK, java.util.Date publishDate,
+		java.util.Date expirationDate, boolean visible)
+		throws com.liferay.portal.kernel.exception.PortalException,
+			com.liferay.portal.kernel.exception.SystemException {
+		return _assetEntryLocalService.updateEntry(className, classPK,
+			publishDate, expirationDate, visible);
 	}
 
 	public com.liferay.portlet.asset.model.AssetEntry updateVisible(

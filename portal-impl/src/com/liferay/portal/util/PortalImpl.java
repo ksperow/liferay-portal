@@ -1160,7 +1160,13 @@ public class PortalImpl implements Portal {
 			cdnHost = getCDNHostHttp(company.getCompanyId());
 		}
 
-		return ParamUtil.getString(request, "cdn_host", cdnHost);
+		cdnHost = ParamUtil.getString(request, "cdn_host", cdnHost);
+
+		if (Validator.isUrl(cdnHost)) {
+			return cdnHost;
+		}
+
+		return StringPool.BLANK;
 	}
 
 	public String getCDNHostHttp(long companyId) {
@@ -1177,7 +1183,9 @@ public class PortalImpl implements Portal {
 		catch (Exception e) {
 		}
 
-		if ((cdnHostHttp == null) || cdnHostHttp.startsWith("${")) {
+		if ((cdnHostHttp == null) || cdnHostHttp.startsWith("${") ||
+			!Validator.isUrl(cdnHostHttp)) {
+
 			cdnHostHttp = StringPool.BLANK;
 		}
 
@@ -1201,7 +1209,9 @@ public class PortalImpl implements Portal {
 		catch (SystemException se) {
 		}
 
-		if ((cdnHostHttps == null) || cdnHostHttps.startsWith("${")) {
+		if ((cdnHostHttps == null) || cdnHostHttps.startsWith("${") ||
+			!Validator.isUrl(cdnHostHttps)) {
+
 			cdnHostHttps = StringPool.BLANK;
 		}
 
@@ -1423,7 +1433,7 @@ public class PortalImpl implements Portal {
 				themeDisplay.getScopeGroupId(), false,
 				PropsValues.COMPANY_SECURITY_STRANGERS_URL);
 
-			return PortalUtil.getLayoutURL(layout, themeDisplay);
+			return getLayoutURL(layout, themeDisplay);
 		}
 		catch (NoSuchLayoutException nsle) {
 		}
@@ -1502,7 +1512,8 @@ public class PortalImpl implements Portal {
 
 	public Date getDate(int month, int day, int year) {
 		try {
-			return getDate(month, day, year, null);
+			return getDate(
+				month, day, year, (Class<? extends PortalException>)null);
 		}
 		catch (PortalException pe) {
 			throw new RuntimeException();
@@ -1510,12 +1521,83 @@ public class PortalImpl implements Portal {
 	}
 
 	public Date getDate(
+			int month, int day, int year,
+			Class<? extends PortalException> clazz)
+		throws PortalException {
+
+		return getDate(month, day, year, null, clazz);
+	}
+
+	public Date getDate(
+			int month, int day, int year, int hour, int min,
+			Class<? extends PortalException> clazz)
+		throws PortalException {
+
+		return getDate(month, day, year, hour, min, null, clazz);
+	}
+
+	/**
+	 * @deprecated {@link #getDate(int, int, int, int, int, Class)}
+	 */
+	public Date getDate(
 			int month, int day, int year, int hour, int min, PortalException pe)
 		throws PortalException {
 
 		return getDate(month, day, year, hour, min, null, pe);
 	}
 
+	public Date getDate(
+			int month, int day, int year, int hour, int min, TimeZone timeZone,
+			Class<? extends PortalException> clazz)
+		throws PortalException {
+
+		if (!Validator.isGregorianDate(month, day, year)) {
+			if (clazz != null) {
+				try {
+					throw clazz.newInstance();
+				}
+				catch (Exception e) {
+					throw new PortalException(e);
+				}
+			}
+			else {
+				return null;
+			}
+		}
+		else {
+			Calendar cal = null;
+
+			if (timeZone == null) {
+				cal = CalendarFactoryUtil.getCalendar();
+			}
+			else {
+				cal = CalendarFactoryUtil.getCalendar(timeZone);
+			}
+
+			if ((hour == -1) || (min == -1)) {
+				cal.set(year, month, day, 0, 0, 0);
+			}
+			else {
+				cal.set(year, month, day, hour, min, 0);
+			}
+
+			cal.set(Calendar.MILLISECOND, 0);
+
+			Date date = cal.getTime();
+
+			/*if ((timeZone != null) &&
+				cal.before(CalendarFactoryUtil.getCalendar(timeZone))) {
+
+				throw pe;
+			}*/
+
+			return date;
+		}
+	}
+
+	/**
+	 * @deprecated {@link #getDate(int, int, int, int, int, TimeZone, Class)}
+	 */
 	public Date getDate(
 			int month, int day, int year, int hour, int min, TimeZone timeZone,
 			PortalException pe)
@@ -1560,12 +1642,26 @@ public class PortalImpl implements Portal {
 		}
 	}
 
+	/**
+	 * @deprecated {@link #getDate(int, int, int, Class)}
+	 */
 	public Date getDate(int month, int day, int year, PortalException pe)
 		throws PortalException {
 
 		return getDate(month, day, year, null, pe);
 	}
 
+	public Date getDate(
+			int month, int day, int year, TimeZone timeZone,
+			Class<? extends PortalException> clazz)
+		throws PortalException {
+
+		return getDate(month, day, year, -1, -1, timeZone, clazz);
+	}
+
+	/**
+	 * @deprecated {@link #getDate(int, int, int, TimeZone, Class)}
+	 */
 	public Date getDate(
 			int month, int day, int year, TimeZone timeZone, PortalException pe)
 		throws PortalException {
@@ -1785,7 +1881,7 @@ public class PortalImpl implements Portal {
 
 			value = getDate(
 				valueDateMonth, valueDateDay, valueDateYear, valueDateHour,
-				valueDateMinute, timeZone, new ValueDataException());
+				valueDateMinute, timeZone, ValueDataException.class);
 		}
 		else if (type == ExpandoColumnConstants.DATE_ARRAY) {
 		}
@@ -1923,7 +2019,7 @@ public class PortalImpl implements Portal {
 
 			value = getDate(
 				valueDateMonth, valueDateDay, valueDateYear, valueDateHour,
-				valueDateMinute, timeZone, new ValueDataException());
+				valueDateMinute, timeZone, ValueDataException.class);
 		}
 		else if (type == ExpandoColumnConstants.DATE_ARRAY) {
 		}
@@ -3908,7 +4004,7 @@ public class PortalImpl implements Portal {
 	}
 
 	public String getUniqueElementId(
-		HttpServletRequest request, String elementId) {
+		HttpServletRequest request, String namespace, String elementId) {
 
 		String uniqueElementId = elementId;
 
@@ -3923,7 +4019,9 @@ public class PortalImpl implements Portal {
 		else {
 			int i = 1;
 
-			while (uniqueElementIds.contains(uniqueElementId)) {
+			while (uniqueElementIds.contains(
+						namespace.concat(uniqueElementId))) {
+
 				uniqueElementId = elementId.concat(StringPool.UNDERLINE).concat(
 					String.valueOf(i));
 
@@ -3931,13 +4029,16 @@ public class PortalImpl implements Portal {
 			}
 		}
 
-		uniqueElementIds.add(uniqueElementId);
+		uniqueElementIds.add(namespace.concat(uniqueElementId));
 
 		return uniqueElementId;
 	}
 
-	public String getUniqueElementId(PortletRequest request, String elementId) {
-		return getUniqueElementId(getHttpServletRequest(request), elementId);
+	public String getUniqueElementId(
+		PortletRequest request, String namespace, String elementId) {
+
+		return getUniqueElementId(
+			getHttpServletRequest(request), namespace, elementId);
 	}
 
 	public UploadPortletRequest getUploadPortletRequest(
@@ -4559,7 +4660,14 @@ public class PortalImpl implements Portal {
 			return true;
 		}
 
-		String strutsAction = ParamUtil.getString(request, "struts_action");
+		String namespace = getPortletNamespace(portletId);
+
+		String strutsAction = ParamUtil.getString(
+			request, namespace + "struts_action");
+
+		if (Validator.isNull(strutsAction)) {
+			strutsAction = ParamUtil.getString(request, "struts_action");
+		}
 
 		if (_portletAddDefaultResourceCheckWhitelistActions.contains(
 				strutsAction)) {
@@ -6112,7 +6220,9 @@ public class PortalImpl implements Portal {
 
 		Ticket ticket = TicketLocalServiceUtil.fetchTicket(ticketKey);
 
-		if (ticket == null) {
+		if ((ticket == null) ||
+			(ticket.getType() != TicketConstants.TYPE_IMPERSONATE)) {
+
 			return false;
 		}
 
@@ -6139,9 +6249,7 @@ public class PortalImpl implements Portal {
 			return false;
 		}
 
-		if ((ticket.getClassPK() != doAsUserId) ||
-			(ticket.getType() != TicketConstants.TYPE_IMPERSONATE)) {
-
+		if (ticket.getClassPK() != doAsUserId) {
 			return false;
 		}
 

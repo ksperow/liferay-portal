@@ -16,11 +16,12 @@ package com.liferay.portlet.documentlibrary.service.impl;
 
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.exception.SystemException;
+import com.liferay.portal.kernel.json.JSONFactoryUtil;
+import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.repository.model.FileEntry;
 import com.liferay.portal.kernel.repository.model.FileVersion;
 import com.liferay.portal.kernel.repository.model.Folder;
 import com.liferay.portal.kernel.util.ListUtil;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
@@ -254,9 +255,13 @@ public class DLAppHelperLocalServiceImpl
 			long userId, FileEntry fileEntry, boolean incrementCounter)
 		throws SystemException {
 
+		if (!incrementCounter) {
+			return;
+		}
+
 		// File rank
 
-		if ((userId > 0) && incrementCounter) {
+		if (userId > 0) {
 			dlFileRankLocalService.updateFileRank(
 				fileEntry.getGroupId(), fileEntry.getCompanyId(), userId,
 				fileEntry.getFileEntryId(), new ServiceContext());
@@ -264,20 +269,18 @@ public class DLAppHelperLocalServiceImpl
 
 		// File read count
 
-		if (PropsValues.DL_FILE_ENTRY_READ_COUNT_ENABLED && incrementCounter) {
-			assetEntryLocalService.incrementViewCounter(
-				userId, DLFileEntryConstants.getClassName(),
-				fileEntry.getFileEntryId(), 1);
+		assetEntryLocalService.incrementViewCounter(
+			userId, DLFileEntryConstants.getClassName(),
+			fileEntry.getFileEntryId(), 1);
 
-			List<DLFileShortcut> fileShortcuts =
-				dlFileShortcutPersistence.findByToFileEntryId(
+		List<DLFileShortcut> fileShortcuts =
+			dlFileShortcutPersistence.findByToFileEntryId(
 				fileEntry.getFileEntryId());
 
-			for (DLFileShortcut fileShortcut : fileShortcuts) {
-				assetEntryLocalService.incrementViewCounter(
-					userId, DLFileShortcut.class.getName(),
-					fileShortcut.getFileShortcutId(), 1);
-			}
+		for (DLFileShortcut fileShortcut : fileShortcuts) {
+			assetEntryLocalService.incrementViewCounter(
+				userId, DLFileShortcut.class.getName(),
+				fileShortcut.getFileShortcutId(), 1);
 		}
 	}
 
@@ -563,11 +566,15 @@ public class DLAppHelperLocalServiceImpl
 				activityType = DLActivityKeys.ADD_FILE_ENTRY;
 			}
 
+			JSONObject extraDataJSONObject = JSONFactoryUtil.createJSONObject();
+
+			extraDataJSONObject.put("title", fileEntry.getTitle());
+
 			socialActivityLocalService.addUniqueActivity(
 				latestFileVersion.getStatusByUserId(), fileEntry.getGroupId(),
 				latestFileVersion.getCreateDate(),
 				DLFileEntryConstants.getClassName(), fileEntry.getFileEntryId(),
-				activityType, StringPool.BLANK, 0);
+				activityType, extraDataJSONObject.toString(), 0);
 		}
 		else {
 

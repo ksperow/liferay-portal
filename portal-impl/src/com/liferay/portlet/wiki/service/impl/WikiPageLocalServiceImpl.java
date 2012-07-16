@@ -76,7 +76,6 @@ import com.liferay.portlet.wiki.util.comparator.PageCreateDateComparator;
 import com.liferay.portlet.wiki.util.comparator.PageVersionComparator;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.InputStream;
 
 import java.util.ArrayList;
@@ -375,7 +374,7 @@ public class WikiPageLocalServiceImpl extends WikiPageLocalServiceBaseImpl {
 	public String addTempPageAttachment(
 			long userId, String fileName, String tempFolderName,
 			InputStream inputStream)
-		throws IOException, PortalException, SystemException {
+		throws PortalException, SystemException {
 
 		return TempFileUtil.addTempFile(
 			userId, fileName, tempFolderName, inputStream);
@@ -587,7 +586,7 @@ public class WikiPageLocalServiceImpl extends WikiPageLocalServiceBaseImpl {
 
 	public void deleteTempPageAttachment(
 			long userId, String fileName, String tempFolderName)
-		throws PortalException {
+		throws PortalException, SystemException {
 
 		TempFileUtil.deleteTempFile(userId, fileName, tempFolderName);
 	}
@@ -1407,19 +1406,26 @@ public class WikiPageLocalServiceImpl extends WikiPageLocalServiceBaseImpl {
 
 			// Social
 
-			int activity = WikiActivityKeys.ADD_PAGE;
+			if (!page.isMinorEdit() ||
+				PropsValues.WIKI_PAGE_MINOR_EDIT_ADD_SOCIAL_ACTIVITY) {
 
-			if (page.getVersion() > WikiPageConstants.VERSION_DEFAULT) {
-				activity = WikiActivityKeys.UPDATE_PAGE;
+				int activity = WikiActivityKeys.ADD_PAGE;
+
+				if (page.getVersion() > WikiPageConstants.VERSION_DEFAULT) {
+					activity = WikiActivityKeys.UPDATE_PAGE;
+				}
+
+				socialActivityLocalService.addActivity(
+					userId, page.getGroupId(), WikiPage.class.getName(),
+					page.getResourcePrimKey(), activity, StringPool.BLANK, 0);
 			}
-
-			socialActivityLocalService.addActivity(
-				userId, page.getGroupId(), WikiPage.class.getName(),
-				page.getResourcePrimKey(), activity, StringPool.BLANK, 0);
 
 			// Subscriptions
 
-			if (!page.isMinorEdit() && NotificationThreadLocal.isEnabled()) {
+			if (NotificationThreadLocal.isEnabled() &&
+				(!page.isMinorEdit() ||
+				 PropsValues.WIKI_PAGE_MINOR_EDIT_SEND_EMAIL)) {
+
 				boolean update = false;
 
 				if (page.getVersion() > WikiPageConstants.VERSION_DEFAULT) {

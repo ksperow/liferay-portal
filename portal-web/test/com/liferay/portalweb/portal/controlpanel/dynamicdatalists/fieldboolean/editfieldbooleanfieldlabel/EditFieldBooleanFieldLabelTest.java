@@ -177,7 +177,7 @@ public class EditFieldBooleanFieldLabelTest extends BaseTestCase {
 
 			try {
 				if (selenium.isVisible(
-							"//input[@class='aui-celleditor-element']")) {
+							"//input[contains(@class,'aui-celleditor-element')]")) {
 					break;
 				}
 			}

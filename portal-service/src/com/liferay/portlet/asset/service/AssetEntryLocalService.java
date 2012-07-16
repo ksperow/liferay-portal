@@ -285,11 +285,6 @@ public interface AssetEntryLocalService extends BaseLocalService,
 		throws com.liferay.portal.kernel.exception.SystemException;
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
-	public com.liferay.portlet.asset.model.AssetEntryDisplay[] getCompanyEntryDisplays(
-		long companyId, int start, int end, java.lang.String languageId)
-		throws com.liferay.portal.kernel.exception.SystemException;
-
-	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public java.util.List<com.liferay.portlet.asset.model.AssetEntry> getEntries(
 		com.liferay.portlet.asset.service.persistence.AssetEntryQuery entryQuery)
 		throws com.liferay.portal.kernel.exception.SystemException;
@@ -372,18 +367,6 @@ public interface AssetEntryLocalService extends BaseLocalService,
 		int start, int end)
 		throws com.liferay.portal.kernel.exception.SystemException;
 
-	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
-	public com.liferay.portlet.asset.model.AssetEntryDisplay[] searchEntryDisplays(
-		long companyId, long[] groupIds, java.lang.String className,
-		java.lang.String keywords, java.lang.String languageId, int start,
-		int end) throws com.liferay.portal.kernel.exception.SystemException;
-
-	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
-	public int searchEntryDisplaysCount(long companyId, long[] groupIds,
-		java.lang.String className, java.lang.String keywords,
-		java.lang.String languageId)
-		throws com.liferay.portal.kernel.exception.SystemException;
-
 	public com.liferay.portlet.asset.model.AssetEntry updateEntry(long userId,
 		long groupId, java.lang.String className, long classPK,
 		long[] categoryIds, java.lang.String[] tagNames)
@@ -400,6 +383,12 @@ public interface AssetEntryLocalService extends BaseLocalService,
 		java.lang.String summary, java.lang.String url,
 		java.lang.String layoutUuid, int height, int width,
 		java.lang.Integer priority, boolean sync)
+		throws com.liferay.portal.kernel.exception.PortalException,
+			com.liferay.portal.kernel.exception.SystemException;
+
+	public com.liferay.portlet.asset.model.AssetEntry updateEntry(
+		java.lang.String className, long classPK, java.util.Date publishDate,
+		java.util.Date expirationDate, boolean visible)
 		throws com.liferay.portal.kernel.exception.PortalException,
 			com.liferay.portal.kernel.exception.SystemException;
 

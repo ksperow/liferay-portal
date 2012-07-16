@@ -56,7 +56,7 @@ import javax.portlet.PortletURL;
 /**
  * @author Brian Wing Shun Chan
  */
-public class ThemeDisplay implements Serializable {
+public class ThemeDisplay implements Cloneable, Serializable {
 
 	public ThemeDisplay() {
 		if (_log.isDebugEnabled()) {
@@ -64,6 +64,21 @@ public class ThemeDisplay implements Serializable {
 		}
 
 		_portletDisplay.setThemeDisplay(this);
+	}
+
+	@Override
+	public Object clone() throws CloneNotSupportedException {
+		ThemeDisplay themeDisplay = (ThemeDisplay)super.clone();
+
+		PortletDisplay portletDisplay = new PortletDisplay();
+
+		_portletDisplay.copyTo(portletDisplay);
+
+		themeDisplay._portletDisplay = portletDisplay;
+
+		portletDisplay.setThemeDisplay(themeDisplay);
+
+		return themeDisplay;
 	}
 
 	public Account getAccount() {
