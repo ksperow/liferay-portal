@@ -292,7 +292,8 @@ public class BeanPropertiesImpl implements BeanProperties {
 			try {
 				Object value = BeanUtil.getProperty(bean, param);
 
-				beanValue = Convert.toLongValue(value, defaultValue);
+				beanValue = Convert.toLong(value, defaultValue);
+//				beanValue = Convert.toLongValue(value, defaultValue);
 			}
 			catch (Exception e) {
 				_log.error(e, e);
